@@ -1,5 +1,6 @@
 package org.example.librarybackend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -7,7 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 
-import java.time.LocalDate;
+import java.util.Date;
 import java.util.Set;
 
 @Entity
@@ -42,10 +43,11 @@ public class User {
 
     private String cardNumber;
 
-    private LocalDate cardExpiryDate;
+    private Date cardExpiryDate;
 
     @Column(nullable = false)
     private Boolean blocked = false;
+
 
     @ManyToMany(fetch=FetchType.EAGER)
     @JoinTable(

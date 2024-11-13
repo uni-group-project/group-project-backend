@@ -29,9 +29,9 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(String email, Set<String> roles) {
+    public String generateToken(String email, Long id, Set<String> roles) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("email", email);
+        claims.put("id", id);
         claims.put("role", roles);
 
         return generateToken(claims, email);

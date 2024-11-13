@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -24,6 +25,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
@@ -50,10 +53,11 @@ public class SecurityConfiguration {
                     return corsConfiguration;
                 }))
                 .authorizeHttpRequests(request -> request
+                        .requestMatchers("/users/register/librarian").hasRole("ADMIN")
+                        .requestMatchers("/users/block/**").hasRole("ADMIN")
+                        .requestMatchers("/users/reader/**").hasRole("LIBRARIAN")
+                        .requestMatchers("/users/login", "/users/register/reader").permitAll()
                         .requestMatchers("/books/**").permitAll()
-                        .requestMatchers("/users/auth/**").permitAll()
-
-//                        .requestMatchers("/account/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .sessionManagement(manager -> manager.sessionCreationPolicy(STATELESS))
                 .authenticationProvider(authenticationProvider())
@@ -79,7 +83,13 @@ public class SecurityConfiguration {
     public UserDetailsService userDetailsService() {
         return username -> {
             org.example.librarybackend.model.User user = userRepository.findByEmail(username).orElseThrow(() -> new UsernameNotFoundException("User not found"));
-            return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), new ArrayList<>());
+            Set<String> roles = userRepository.findRolesByUserId(user.getId());
+
+            Set<SimpleGrantedAuthority> r = roles.stream()
+                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                    .collect(Collectors.toSet());
+
+            return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), r);
         };
     }
 
