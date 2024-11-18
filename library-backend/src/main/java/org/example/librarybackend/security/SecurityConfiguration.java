@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -57,7 +58,20 @@ public class SecurityConfiguration {
                         .requestMatchers("/users/block/**").hasRole("ADMIN")
                         .requestMatchers("/users/reader/**").hasRole("LIBRARIAN")
                         .requestMatchers("/users/login", "/users/register/reader").permitAll()
-                        .requestMatchers("/books/**").permitAll()
+
+                        .requestMatchers("/books").permitAll() // Гостьовий доступ
+                        .requestMatchers(HttpMethod.GET, "/books/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/books").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/books/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/books/**").hasRole("ADMIN")
+
+                        .requestMatchers("/loans/issue").hasRole("LIBRARIAN")
+                        .requestMatchers("/loans/return/**").hasRole("LIBRARIAN")
+                        .requestMatchers("/loans/user/**").hasAnyRole("LIBRARIAN", "READER")
+
+                        .requestMatchers("/reservations/reserve").hasRole("READER")
+                        .requestMatchers("/reservations/cancel/**").hasRole("READER")
+                        .requestMatchers("/reservations/user/**").hasRole("READER")
                         .anyRequest().authenticated())
                 .sessionManagement(manager -> manager.sessionCreationPolicy(STATELESS))
                 .authenticationProvider(authenticationProvider())
