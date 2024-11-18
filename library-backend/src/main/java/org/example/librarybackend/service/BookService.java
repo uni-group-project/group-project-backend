@@ -90,4 +90,13 @@ public class BookService {
         book.setNotificationMessage(bookDTO.getNotificationMessage());
         return book;
     }
+
+    public List<BookDTO> searchBooks(String title, String author, String genre, Integer year) {
+        return bookRepository.findAll().stream()
+                .filter(book -> (title == null || book.getTitle().contains(title)) &&
+                        (author == null || book.getAuthor().contains(author)) &&
+                        (genre == null || book.getGenre().equalsIgnoreCase(genre)))
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
 }
