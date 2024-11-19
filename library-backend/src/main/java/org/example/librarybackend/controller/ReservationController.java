@@ -47,4 +47,10 @@ public class ReservationController {
     public ResponseEntity<List<ReservationDTO>> getReservationsForUser(@PathVariable Long userId) {
         return ResponseEntity.ok(reservationService.getUserReservations(userId));
     }
+
+    @GetMapping("/expired")
+    @PreAuthorize("hasRole('LIBRARIAN')")
+    public ResponseEntity<List<ReservationDTO>> getExpiredReservations() {
+        return ResponseEntity.ok(reservationService.getExpiredReservations());
+    }
 }

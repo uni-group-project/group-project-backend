@@ -33,58 +33,55 @@ public class ReservationService {
         Optional<User> user = userRepository.findById(reservationDTO.getUserId());
         Optional<Book> book = bookRepository.findById(reservationDTO.getBookId());
 
-        if (user.isEmpty()) {
-            return "User not found!";
+        if (user.isEmpty() || book.isEmpty() || !book.get().isAvailable()) {
+            return "Invalid user or book is not available";
         }
 
-        if (book.isEmpty()) {
-            return "Book not found!";
-        }
+        Book reservedBook = book.get();
+        reservedBook.setAvailable(false);
+        bookRepository.save(reservedBook);
 
-        if (!book.get().isAvailable()) {
-            return "Book is not available for reservation!";
-        }
-
-        Reservation reservation = Reservation.builder()
-                .user(user.get())
-                .book(book.get())
-                .reservationDate(reservationDTO.getReservationDate())
-                .reservationExpiryDate(reservationDTO.getReservationExpiryDate())
-                .build();
-
+        Reservation reservation = new Reservation();
+        reservation.setUser(user.get());
+        reservation.setBook(reservedBook);
+        reservation.setReservationDate(reservationDTO.getReservationDate());
+        reservation.setReservationExpiryDate(reservationDTO.getReservationExpiryDate());
         reservationRepository.save(reservation);
-
-        // Update book status
-        book.get().setAvailable(false);
-        bookRepository.save(book.get());
 
         return "Book reserved successfully!";
     }
 
     public boolean cancelReservation(Long reservationId) {
-        Optional<Reservation> reservation = reservationRepository.findById(reservationId);
-
-        if (reservation.isPresent()) {
-            Book book = reservation.get().getBook();
-            book.setAvailable(true); // Release the book
+        return reservationRepository.findById(reservationId).map(reservation -> {
+            Book book = reservation.getBook();
+            book.setAvailable(true);
             bookRepository.save(book);
-
-            reservationRepository.deleteById(reservationId);
+            reservationRepository.delete(reservation);
             return true;
-        }
-
-        return false;
+        }).orElse(false);
     }
 
     public List<ReservationDTO> getUserReservations(Long userId) {
-        List<Reservation> reservations = reservationRepository.findByUserId(userId);
-        return reservations.stream()
-                .map(reservation -> new ReservationDTO(
-                        reservation.getUser().getId(),
-                        reservation.getBook().getId(),
-                        reservation.getReservationDate(),
-                        reservation.getReservationExpiryDate()
-                ))
+        return reservationRepository.findByUserId(userId)
+                .stream()
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    public List<ReservationDTO> getExpiredReservations() {
+        LocalDate today = LocalDate.now();
+        return reservationRepository.findExpiredReservations(today)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    private ReservationDTO mapToDTO(Reservation reservation) {
+        return new ReservationDTO(
+                reservation.getUser().getId(),
+                reservation.getBook().getId(),
+                reservation.getReservationDate(),
+                reservation.getReservationExpiryDate()
+        );
     }
 }

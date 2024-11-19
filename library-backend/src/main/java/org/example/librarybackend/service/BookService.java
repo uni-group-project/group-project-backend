@@ -9,12 +9,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import java.util.*;
-
 @Service
 public class BookService {
 
     private final BookRepository bookRepository;
+
 
     @Autowired
     public BookService(BookRepository bookRepository) {
@@ -61,6 +60,15 @@ public class BookService {
         return false;
     }
 
+    public List<BookDTO> searchBooks(String title, String author, String genre, Integer year) {
+        return bookRepository.findAll().stream()
+                .filter(book -> (title == null || book.getTitle().contains(title)) &&
+                        (author == null || book.getAuthor().contains(author)) &&
+                        (genre == null || book.getGenre().equalsIgnoreCase(genre)))
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
     // Convert Book entity to BookDTO
     private BookDTO toDTO(Book book) {
         BookDTO dto = new BookDTO();
@@ -91,12 +99,5 @@ public class BookService {
         return book;
     }
 
-    public List<BookDTO> searchBooks(String title, String author, String genre, Integer year) {
-        return bookRepository.findAll().stream()
-                .filter(book -> (title == null || book.getTitle().contains(title)) &&
-                        (author == null || book.getAuthor().contains(author)) &&
-                        (genre == null || book.getGenre().equalsIgnoreCase(genre)))
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
+
 }

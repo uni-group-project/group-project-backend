@@ -47,4 +47,10 @@ public class LoanController {
     public ResponseEntity<List<LoanDTO>> getLoansForUser(@PathVariable Long userId) {
         return ResponseEntity.ok(loanService.getUserLoans(userId));
     }
+
+    @GetMapping("/overdue")
+    @PreAuthorize("hasRole('LIBRARIAN')")
+    public ResponseEntity<List<LoanDTO>> getOverdueLoans() {
+        return ResponseEntity.ok(loanService.getOverdueLoans());
+    }
 }

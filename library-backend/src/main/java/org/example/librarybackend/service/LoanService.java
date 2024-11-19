@@ -33,63 +33,58 @@ public class LoanService {
         Optional<User> user = userRepository.findById(loanDTO.getUserId());
         Optional<Book> book = bookRepository.findById(loanDTO.getBookId());
 
-        if (user.isEmpty()) {
-            return "User not found!";
+        if (user.isEmpty() || book.isEmpty() || !book.get().isAvailable()) {
+            return "Invalid user or book is not available";
         }
 
-        if (book.isEmpty()) {
-            return "Book not found!";
-        }
+        Book bookToLoan = book.get();
+        bookToLoan.setAvailable(false);
+        bookRepository.save(bookToLoan);
 
-        if (!book.get().isAvailable()) {
-            return "Book is not available!";
-        }
-
-        Loan loan = Loan.builder()
-                .user(user.get())
-                .book(book.get())
-                .loanDate(loanDTO.getLoanDate())
-                .returnDueDate(loanDTO.getReturnDueDate())
-                .status("issued")
-                .build();
-
+        Loan loan = new Loan();
+        loan.setUser(user.get());
+        loan.setBook(bookToLoan);
+        loan.setLoanDate(loanDTO.getLoanDate());
+        loan.setReturnDueDate(loanDTO.getReturnDueDate());
+        loan.setStatus("issued");
         loanRepository.save(loan);
-
-        // Update book status
-        book.get().setAvailable(false);
-        bookRepository.save(book.get());
 
         return "Book issued successfully!";
     }
 
     public boolean returnLoan(Long loanId) {
-        Optional<Loan> loan = loanRepository.findById(loanId);
-
-        if (loan.isPresent()) {
-            Loan existingLoan = loan.get();
-            existingLoan.setStatus("returned");
-
-            Book book = existingLoan.getBook();
-            book.setAvailable(true); // Mark book as available
+        return loanRepository.findById(loanId).map(loan -> {
+            loan.setStatus("returned");
+            Book book = loan.getBook();
+            book.setAvailable(true);
             bookRepository.save(book);
-
-            loanRepository.save(existingLoan);
+            loanRepository.save(loan);
             return true;
-        }
-
-        return false;
+        }).orElse(false);
     }
 
     public List<LoanDTO> getUserLoans(Long userId) {
-        List<Loan> loans = loanRepository.findByUserId(userId);
-        return loans.stream()
-                .map(loan -> new LoanDTO(
-                        loan.getUser().getId(),
-                        loan.getBook().getId(),
-                        loan.getLoanDate(),
-                        loan.getReturnDueDate(),
-                        loan.getStatus()
-                ))
+        return loanRepository.findByUserId(userId)
+                .stream()
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    public List<LoanDTO> getOverdueLoans() {
+        LocalDate today = LocalDate.now();
+        return loanRepository.findOverdueLoans(today)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    private LoanDTO mapToDTO(Loan loan) {
+        return new LoanDTO(
+                loan.getUser().getId(),
+                loan.getBook().getId(),
+                loan.getLoanDate(),
+                loan.getReturnDueDate(),
+                loan.getStatus()
+        );
     }
 }
