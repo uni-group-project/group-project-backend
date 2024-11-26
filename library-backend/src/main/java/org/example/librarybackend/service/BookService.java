@@ -33,12 +33,11 @@ public class BookService {
     }
 
     public boolean addBook(BookDTO bookDTO) {
-        if (bookDTO.getTitle().isBlank() || bookDTO.getAuthor().isBlank() ||
-                bookDTO.getGenre().isBlank() || bookDTO.getCode().isBlank()) {
-            throw new IllegalArgumentException("Required fields cannot be blank");
-        }
+        // Перетворення DTO в модель
+        Book book = toEntity(bookDTO);
+
+        // Збереження книги у репозиторії
         try {
-            Book book = toEntity(bookDTO);
             bookRepository.save(book);
             return true;
         } catch (Exception e) {
