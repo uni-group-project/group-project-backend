@@ -3,6 +3,7 @@ package org.example.librarybackend.controller;
 import org.example.librarybackend.dto.ReservationDTO;
 import org.example.librarybackend.service.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -45,7 +46,14 @@ public class ReservationController {
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasRole('READER')")
     public ResponseEntity<List<ReservationDTO>> getReservationsForUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(reservationService.getUserReservations(userId));
+        if (!reservationService.userExists(userId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Користувач не знайдений
+        }
+        List<ReservationDTO> reservations = reservationService.getUserReservations(userId);
+        if (reservations.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Бронювання не знайдені
+        }
+        return ResponseEntity.ok(reservations);
     }
 
     @GetMapping("/expired")

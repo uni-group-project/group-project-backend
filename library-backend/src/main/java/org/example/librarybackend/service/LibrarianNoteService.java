@@ -43,6 +43,10 @@ public class LibrarianNoteService {
                 .collect(Collectors.toList());
     }
 
+    public boolean userExists(Long userId) {
+        return userRepository.existsById(userId); // Перевіряємо існування користувача
+    }
+
     private LibrarianNoteDTO mapToDTO(LibrarianNote note) {
         return new LibrarianNoteDTO(
                 note.getUser().getId(),
