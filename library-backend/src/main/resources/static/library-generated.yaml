@@ -5,25 +5,70 @@ info:
   version: 1.0.0
 servers:
   - url: http://localhost:8080
+tags:
+  - name: Books
+    description: Info on all of books in the library and management operations
+  - name: Users
+    description: User registration, login and info
+  - name: Reservations
+    description: Book reservations
+  - name: Loans
+    description: Book loans
+  - name: Librarian notes
+    description: Notes made by librarians on readers
 paths:
-  tags:
-    - name: Books
-      description: Info on all of books in the library and management operations
-    - name: Users
-      description: User registration, login and info
-    - name: Reservations
-      description: Book reservations
-    - name: Loans
-      description: Book loans
-    - name: Librarian notes
-      description: Notes made by librarians on readers
+  /books:
+    get:
+      tags:
+        - Books
+      summary: 'Get info about all of the books in the library'
+      operationId: getAllBooks
+      responses:
+        200:
+          description: 'Returned books'
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookDTO'
+        404:
+          description: 'No books found'
+    post:
+      tags:
+        - Books
+      summary: 'Add a new book'
+      operationId: addBook
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookDTO'
+        required: true
+      responses:
+        200:
+          description: 'Book successfully added'
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: 'Book added successfully'
+        400:
+          description: 'Failed to add book'
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: 'Failed to add book'
   /books/{id}:
     get:
       tags:
         - Books
       operationId: getBook
+      summary: 'Get book by its id'
       parameters:
         - name: id
+          description: 'id of the book'
           in: path
           required: true
           schema:
@@ -31,17 +76,21 @@ paths:
             format: int64
       responses:
         200:
-          description: OK
+          description: 'Successfully got the book'
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/BookDTO'
+        404:
+          description: 'Book not found'
     put:
       tags:
         - Books
       operationId: updateBook
+      summary: 'Update book info'
       parameters:
         - name: id
+          description: 'id of the book to be updated'
           in: path
           required: true
           schema:
@@ -55,17 +104,27 @@ paths:
         required: true
       responses:
         200:
-          description: OK
+          description: 'Book updated successfully'
           content:
-            '*/*':
+            'application/json':
               schema:
                 type: string
+                example: 'Book updated successfully'
+        404:
+          description: 'Book with this id not found'
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: 'Failed to update book'
     delete:
       tags:
         - Books
       operationId: deleteBook
+      summary: 'Delete a book'
       parameters:
         - name: id
+          description: 'id of the book to be deleted'
           in: path
           required: true
           schema:
@@ -75,9 +134,63 @@ paths:
         200:
           description: OK
           content:
-            '*/*':
+            'application/json':
               schema:
                 type: string
+                example: 'Book deleted successfully'
+        404:
+          description: 'Book with this id not found'
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: 'Book not found'
+  /books/search:
+    get:
+      tags:
+        - Books
+      operationId: searchBooks
+      summary: 'Find books by criteria'
+      parameters:
+        - name: title
+          description: Book's title
+          example: Title
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: author
+          description: Book's author
+          example: Jane Doe
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: genre
+          description: Book's genre
+          in: query
+          required: false
+          example: Fantasy
+          schema:
+            type: string
+      responses:
+        200:
+          description: Found one or more books matching criteria
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookDTO'
+        404:
+          description: No books matching criteria found
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookDTO'
+                example: []
   /users/register/reader:
     post:
       tags:
@@ -204,37 +317,6 @@ paths:
           application/json:
             schema:
               type: string
-        required: true
-      responses:
-        200:
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: string
-  /books:
-    get:
-      tags:
-        - Books
-      operationId: getAllBooks
-      responses:
-        200:
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BookDTO'
-    post:
-      tags:
-        - Books
-      operationId: addBook
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BookDTO'
         required: true
       responses:
         200:
@@ -410,36 +492,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/LibrarianNoteDTO'
-  /books/search:
-    get:
-      tags:
-        - Books
-      operationId: searchBooks
-      parameters:
-        - name: title
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: author
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: genre
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BookDTO'
   /reservations/cancel/{reservationId}:
     delete:
       tags:
@@ -474,22 +526,29 @@ components:
           format: int64
         title:
           type: string
+          example: 'Book Title'
         author:
           type: string
+          example: 'John Doe'
         code:
           type: string
+          example: 'ISBN 978-3-16-148410-0'
         genre:
           type: string
+          example: 'Fantasy'
         available:
           type: boolean
+          example: 'true'
         loanPeriod:
           type: integer
+          example: '30'
           format: int32
         nextReturnDate:
           type: string
           format: date
         notificationMessage:
           type: string
+          example: 'Message'
     ReaderRegisterDTO:
       type: object
       properties:
