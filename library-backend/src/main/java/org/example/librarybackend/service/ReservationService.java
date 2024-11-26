@@ -68,6 +68,10 @@ public class ReservationService {
                 .collect(Collectors.toList());
     }
 
+    public boolean userExists(Long userId) {
+        return userRepository.existsById(userId); // Перевіряємо існування користувача
+    }
+
     public List<ReservationDTO> getExpiredReservations() {
         LocalDate today = LocalDate.now();
         return reservationRepository.findExpiredReservations(today)

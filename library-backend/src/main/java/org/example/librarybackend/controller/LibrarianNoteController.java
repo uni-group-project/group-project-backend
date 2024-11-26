@@ -29,7 +29,13 @@ public class LibrarianNoteController {
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasRole('LIBRARIAN')")
     public ResponseEntity<List<LibrarianNoteDTO>> getNotesForUser(@PathVariable Long userId) {
+        if (!librarianNoteService.userExists(userId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Користувач не знайдений
+        }
         List<LibrarianNoteDTO> notes = librarianNoteService.getNotesForUser(userId);
+        if (notes.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Примітки не знайдені
+        }
         return ResponseEntity.ok(notes);
     }
 }
