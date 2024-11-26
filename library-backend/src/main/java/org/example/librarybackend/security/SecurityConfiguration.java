@@ -54,7 +54,7 @@ public class SecurityConfiguration {
                 }))
                 .authorizeHttpRequests(request -> request
                         // for tests
-                        .requestMatchers("/api-docs/**", "/swagger-ui/**", "/library.yml").permitAll()
+                        .requestMatchers("/api-docs/**", "/swagger-ui/**", "/library.yml", "/library-generated.yaml").permitAll()
 
                         .requestMatchers("/users/register/librarian").hasRole("ADMIN")
                         .requestMatchers("/users/block/**").hasRole("ADMIN")
