@@ -33,6 +33,10 @@ public class BookService {
     }
 
     public boolean addBook(BookDTO bookDTO) {
+        if (bookDTO.getTitle().isBlank() || bookDTO.getAuthor().isBlank() ||
+                bookDTO.getGenre().isBlank() || bookDTO.getCode().isBlank()) {
+            throw new IllegalArgumentException("Required fields cannot be blank");
+        }
         try {
             Book book = toEntity(bookDTO);
             bookRepository.save(book);
@@ -60,7 +64,7 @@ public class BookService {
         return false;
     }
 
-    public List<BookDTO> searchBooks(String title, String author, String genre, Integer year) {
+    public List<BookDTO> searchBooks(String title, String author, String genre) {
         return bookRepository.findAll().stream()
                 .filter(book -> (title == null || book.getTitle().contains(title)) &&
                         (author == null || book.getAuthor().contains(author)) &&

@@ -1,6 +1,7 @@
 package org.example.librarybackend.controller;
 
 import jakarta.annotation.security.PermitAll;
+import jakarta.validation.Valid;
 import org.example.librarybackend.dto.BookDTO;
 import org.example.librarybackend.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +43,7 @@ public class BookController {
 
     @PostMapping("")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> addBook(@RequestBody BookDTO bookDTO) {
+    public ResponseEntity<String> addBook(@Valid @RequestBody BookDTO bookDTO) {
         if (bookService.addBook(bookDTO)) {
             return ResponseEntity.status(HttpStatus.CREATED).body("Book added successfully");
         } else {
@@ -52,11 +53,11 @@ public class BookController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {
+    public ResponseEntity<String> updateBook(@PathVariable Long id, @Valid @RequestBody BookDTO bookDTO) {
         if (bookService.updateBook(id, bookDTO)) {
             return ResponseEntity.ok("Book updated successfully");
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to update book");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Failed to update book");
         }
     }
 
@@ -66,7 +67,7 @@ public class BookController {
         if (bookService.deleteBook(id)) {
             return ResponseEntity.ok("Book deleted successfully");
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to delete book");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Book not found");
         }
     }
 
@@ -75,9 +76,12 @@ public class BookController {
     public ResponseEntity<List<BookDTO>> searchBooks(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String author,
-            @RequestParam(required = false) String genre,
-            @RequestParam(required = false) Integer year
+            @RequestParam(required = false) String genre
     ) {
-        return ResponseEntity.ok(bookService.searchBooks(title, author, genre, year));
+        List<BookDTO> results = bookService.searchBooks(title, author, genre);
+        if (results.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(results);
+        }
+        return ResponseEntity.ok(results);
     }
 }

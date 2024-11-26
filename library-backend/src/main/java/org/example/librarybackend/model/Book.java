@@ -29,7 +29,7 @@ public class Book {
     @Column(nullable = false, unique = true)
     private String code;
 
-    @Column
+    @Column(nullable = false)
     private String genre;
 
     @Column(nullable = false)
