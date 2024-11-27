@@ -74,7 +74,13 @@ public class ReservationService {
 
     public List<ReservationDTO> getExpiredReservations() {
         LocalDate today = LocalDate.now();
-        return reservationRepository.findExpiredReservations(today)
+        List<Reservation> expiredReservations = reservationRepository.findExpiredReservations(today);
+
+        if (expiredReservations.isEmpty()) {
+            return null; // Повертаємо null, якщо немає прострочених бронювань
+        }
+
+        return expiredReservations
                 .stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());

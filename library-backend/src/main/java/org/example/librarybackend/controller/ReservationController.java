@@ -58,7 +58,13 @@ public class ReservationController {
 
     @GetMapping("/expired")
     @PreAuthorize("hasRole('LIBRARIAN')")
-    public ResponseEntity<List<ReservationDTO>> getExpiredReservations() {
-        return ResponseEntity.ok(reservationService.getExpiredReservations());
+    public ResponseEntity<?> getExpiredReservations() {
+        List<ReservationDTO> expiredReservations = reservationService.getExpiredReservations();
+
+        if (expiredReservations == null || expiredReservations.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No expired reservations found");
+        }
+
+        return ResponseEntity.ok(expiredReservations);
     }
 }

@@ -43,7 +43,17 @@ public class BookController {
 
     @PostMapping("")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> addBook(@Valid @RequestBody BookDTO bookDTO) {
+    public ResponseEntity<String> addBook(@RequestBody BookDTO bookDTO) {
+        // Перевірка обов'язкових полів
+        if (bookDTO.getTitle() == null || bookDTO.getTitle().trim().isEmpty() ||
+                bookDTO.getAuthor() == null || bookDTO.getAuthor().trim().isEmpty() ||
+                bookDTO.getCode() == null || bookDTO.getCode().trim().isEmpty() ||
+                bookDTO.getGenre() == null || bookDTO.getGenre().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error: Title, author, code, and genre must not be empty");
+        }
+
+        // Виклик сервісу для додавання книги
         if (bookService.addBook(bookDTO)) {
             return ResponseEntity.status(HttpStatus.CREATED).body("Book added successfully");
         } else {
