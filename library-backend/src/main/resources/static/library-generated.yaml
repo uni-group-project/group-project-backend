@@ -90,6 +90,8 @@ paths:
         - Books
       operationId: updateBook
       summary: 'Update book info'
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           description: 'id of the book to be updated'
@@ -124,6 +126,8 @@ paths:
         - Books
       operationId: deleteBook
       summary: 'Delete a book'
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           description: 'id of the book to be deleted'
@@ -228,6 +232,8 @@ paths:
         - Users
       summary: Register a new librarian
       operationId: registerLibrarian
+      security:
+        - bearerAuth: []
       requestBody:
         content:
           application/json:
@@ -299,6 +305,8 @@ paths:
         - Users
       summary: Get user with given id info
       operationId: getUserById
+      security:
+        - bearerAuth: []
       parameters:
         - name: userId
           description: User's id
@@ -327,6 +335,8 @@ paths:
         - Users
       operationId: getReaderByCardNumber
       summary: Get info on reader with given card number
+      security:
+        - bearerAuth: []
       parameters:
         - name: cardNumber
           in: path
@@ -354,6 +364,8 @@ paths:
           - Users
         summary: Block reader with id
         operationId: blockReader
+        security:
+          - bearerAuth: []
         parameters:
           - name: readerId
             in: path
@@ -477,6 +489,8 @@ paths:
         - Reservations
       operationId: cancelReservation
       summary: Cancel reservation by id
+      security:
+        - bearerAuth: []
       parameters:
         - name: reservationId
           description: Id of the reservation
@@ -506,6 +520,8 @@ paths:
         - Loans
       operationId: returnBook
       summary: Return the loaned book
+      security:
+        - bearerAuth: []
       parameters:
         - name: loanId
           description: Loan id
@@ -535,6 +551,8 @@ paths:
         - Loans
       operationId: issueLoan
       summary: Issue a new loan
+      security:
+        - bearerAuth: [ ]
       requestBody:
         content:
           application/json:
@@ -573,6 +591,8 @@ paths:
         - Loans
       operationId: updateLoanStatus
       summary: Updates loan status
+      security:
+        - bearerAuth: [ ]
       parameters:
         - name: loanId
           description: Id of loan to be updated
@@ -615,6 +635,8 @@ paths:
         - Loans
       operationId: getLoansForUser
       summary: Get loans for user with given id
+      security:
+        - bearerAuth: [ ]
       parameters:
         - name: userId
           description: Id of the user
@@ -645,6 +667,8 @@ paths:
         - Loans
       operationId: getOverdueLoans
       summary: Get overdue loans
+      security:
+        - bearerAuth: [ ]
       responses:
         200:
           description: Found one or more overdue loans
@@ -705,6 +729,8 @@ paths:
         - Librarian notes
       operationId: getNotesForUser
       summary: Get notes on user
+      security:
+        - bearerAuth: [ ]
       parameters:
         - name: userId
           in: path
