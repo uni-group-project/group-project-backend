@@ -666,8 +666,12 @@ paths:
       tags:
         - Librarian notes
       operationId: addNoteToUser
+      summary: Add a note for user
+      security:
+        - bearerAuth: []
       parameters:
         - name: userId
+          description: Id of the user
           in: query
           required: true
           schema:
@@ -678,35 +682,57 @@ paths:
           application/json:
             schema:
               type: string
+              example: Sample note
         required: true
       responses:
         200:
-          description: OK
+          description: Note added successfully
           content:
-            '*/*':
+            'application/json':
               schema:
                 type: string
+                example: Note added successfully
+        404:
+          description: No user found
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: No user found
   /librarian-notes/user/{userId}:
     get:
       tags:
         - Librarian notes
       operationId: getNotesForUser
+      summary: Get notes on user
       parameters:
         - name: userId
           in: path
+          description: Id of the user
           required: true
           schema:
             type: integer
             format: int64
       responses:
         200:
-          description: OK
+          description: Found one or more notes on user
           content:
-            '*/*':
+            'application/json':
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/LibrarianNoteDTO'
+        404:
+          description: User or note on him not found
+          content:
+            'application/json':
+              schema:
+                type: string
+              examples:
+                User not found:
+                  value: User not found
+                Notes not found:
+                  value: Notes on this user not found
 components:
   securitySchemes:
     bearerAuth:
@@ -840,11 +866,14 @@ components:
         userId:
           type: integer
           format: int64
+          example: 5
         note:
           type: string
+          example: "Sample note"
         createdAt:
           type: string
           format: date-time
+          example: "2024-11-27"
     UserDTO:
       type: object
       properties:
