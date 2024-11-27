@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
   title: Library
-  description: Library API SErver
+  description: Library API Server
   version: 1.0.0
 servers:
   - url: http://localhost:8080
@@ -39,6 +39,8 @@ paths:
         - Books
       summary: 'Add a new book'
       operationId: addBook
+      security:
+        - bearerAuth: []
       requestBody:
         content:
           application/json:
@@ -46,7 +48,7 @@ paths:
               $ref: '#/components/schemas/BookDTO'
         required: true
       responses:
-        200:
+        201:
           description: 'Book successfully added'
           content:
             'application/json':
@@ -195,6 +197,7 @@ paths:
     post:
       tags:
         - Users
+      summary: Register a new reader
       operationId: registerReader
       requestBody:
         content:
@@ -204,15 +207,26 @@ paths:
         required: true
       responses:
         200:
-          description: OK
+          description: Reader registered successfully
           content:
-            '*/*':
+            'application/json':
               schema:
                 type: object
+                properties:
+                  jwt:
+                    type: string
+        400:
+          description: Email already exists
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: 'Error: Email already exists'
   /users/register/librarian:
     post:
       tags:
         - Users
+      summary: Register a new librarian
       operationId: registerLibrarian
       requestBody:
         content:
@@ -222,15 +236,30 @@ paths:
         required: true
       responses:
         200:
-          description: OK
+          description: Librarian registered successfully
           content:
-            '*/*':
+            'application/json':
               schema:
                 type: object
+                properties:
+                  email:
+                    type: string
+                    example: lovemrsnorris@hogwarts.com
+                  password:
+                    type: string
+                    example: grg3443f
+        400:
+          description: Email already exists
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: 'Error: Email already exists'
   /users/login:
     post:
       tags:
         - Users
+      summary: Login into an existing account
       operationId: login
       requestBody:
         content:
@@ -242,9 +271,118 @@ paths:
         200:
           description: OK
           content:
-            '*/*':
+            'application/json':
               schema:
                 type: object
+                properties:
+                  jwt:
+                    type: string
+        404:
+          description: No user with submitted email
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: Email not found
+        500:
+          description: Wrong password
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: |
+                  "can't parse JSON.  Raw result:"
+                  "An unexpected error occurred: Bad credentials"
+  /users/{userId}:
+    get:
+      tags:
+        - Users
+      summary: Get user with given id info
+      operationId: getUserById
+      parameters:
+        - name: userId
+          description: User's id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/UserDTO"
+        404:
+          description: User not found
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: "Error: User not found"
+  /users/reader/{cardNumber}:
+    get:
+      tags:
+        - Users
+      operationId: getReaderByCardNumber
+      summary: Get info on reader with given card number
+      parameters:
+        - name: cardNumber
+          in: path
+          required: true
+          schema:
+            type: string
+            example: 43231343
+      responses:
+        200:
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/UserDTO"
+        404:
+          description: Reader with card number not found
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: "Error: Reader with card number not found"
+  /users/block/{readerId}:
+      get:
+        tags:
+          - Users
+        summary: Block reader with id
+        operationId: blockReader
+        parameters:
+          - name: readerId
+            in: path
+            required: true
+            schema:
+              type: integer
+              format: int64
+        responses:
+          200:
+            description: Reader has been blocked
+            content:
+              'application/json':
+                schema:
+                  type: string
+                  example: Reader has been blocked.
+          400:
+            description: User is not a reader
+            content:
+              application/json:
+                schema:
+                  type: string
+                  example: "Error: User is not a reader"
+          404:
+            description: Reader not found
+            content:
+              'application/json':
+                schema:
+                  type: string
+                  example: "Error: Reader not found"
   /reservations/reserve:
     post:
       tags:
@@ -349,62 +487,7 @@ paths:
             '*/*':
               schema:
                 type: string
-  /users/{userId}:
-    get:
-      tags:
-        - Users
-      operationId: getUserById
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        200:
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: object
-  /users/reader/{cardNumber}:
-    get:
-      tags:
-        - Users
-      operationId: getReaderByCardNumber
-      parameters:
-        - name: cardNumber
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: object
-  /users/block/{readerId}:
-    get:
-      tags:
-        - Users
-      operationId: blockReader
-      parameters:
-        - name: readerId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        200:
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: string
+
   /reservations/user/{userId}:
     get:
       tags:
@@ -512,6 +595,11 @@ paths:
               schema:
                 type: string
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     BookDTO:
       required:
@@ -554,36 +642,48 @@ components:
       properties:
         phone:
           type: string
+          example: +380671488228
         firstName:
           type: string
+          example: Vasyl
         lastName:
           type: string
+          example: Pupkin
         email:
           type: string
+          example: vasyl.pupkin@example.com
         age:
           type: integer
+          example: 18
           format: int32
         password:
           type: string
+          example: AStrongPassword
     LibrarianRegisterDTO:
       type: object
       properties:
         firstName:
           type: string
+          example: Argus
         lastName:
           type: string
+          example: Filch
         email:
           type: string
+          example: lovemrsnorris@hogwarts.com
         age:
           type: integer
+          example: 69
           format: int32
     UserLoginDTO:
       type: object
       properties:
         email:
           type: string
+          example: vasyl.pupkin@example.com
         password:
           type: string
+          example: AStrongPassword
     ReservationDTO:
       type: object
       properties:
@@ -631,3 +731,42 @@ components:
         createdAt:
           type: string
           format: date-time
+    UserDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+        firstName:
+          type: string
+          example: Vasyl
+        lastName:
+          type: string
+          example: Pupkin
+        email:
+          type: string
+          example: vasyl.pupkin@example.com
+        phone:
+          type: string
+          example: +380671488228
+        age:
+          type: integer
+          example: 18
+          format: int32
+        cardNumber:
+          type: string
+          example: 43792345
+        cardExpiryDate:
+          type: string
+          example: 2024-11-11
+        blocked:
+          type: boolean
+          example: false
+        roles:
+          type: string
+          example: READER
+#          type: array
+#          items: [
+#          properties:
+#
+#          ]
