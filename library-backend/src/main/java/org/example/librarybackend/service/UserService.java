@@ -33,6 +33,12 @@ public class UserService {
     public UserAuthResponseDTO login(UserLoginDTO loginDto) {
         User user = userRepository.findByEmail(loginDto.getEmail()).orElseThrow(() -> new UsernameNotFoundException("Email not found"));
 
+        Date d = user.getCardExpiryDate();
+
+        if(user.getBlocked() || d != null && d.before(new Date())){
+            return null;
+        }
+
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                 loginDto.getEmail(), loginDto.getPassword()
         ));
@@ -93,7 +99,6 @@ public class UserService {
         librarian.setFirstName(registerDto.getFirstName());
         librarian.setLastName(registerDto.getLastName());
         librarian.setEmail(registerDto.getEmail());
-        librarian.setAge(registerDto.getAge());
         String password = generatePassword();
 
         librarian.setPassword(passwordEncoder.encode(password));
@@ -110,14 +115,14 @@ public class UserService {
 
     public UserDTO getReaderByCardNumber(String cardNumber) {
         User u = userRepository.findByCardNumber(cardNumber)
-                .orElseThrow(() -> new RuntimeException("Reader with card number not found"));
+                .orElseThrow(() -> new UsernameNotFoundException("Reader with card number not found"));
 
         return mapToUserDTO(u);
     }
 
     public UserDTO getUserById(Long userId) {
         User u = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         return mapToUserDTO(u);
     }

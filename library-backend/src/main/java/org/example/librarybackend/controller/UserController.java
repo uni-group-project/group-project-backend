@@ -22,11 +22,15 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UserLoginDTO loginDto) {
         try{
-            return ResponseEntity.ok(userService.login(loginDto));
+            UserAuthResponseDTO u = userService.login(loginDto);
+            if(u == null){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User is blocked or expired");
+            }
+            return ResponseEntity.ok(u);
         } catch (UsernameNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Error: " + ex.getMessage());
         } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred: " + ex.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Data incorrect: " + ex.getMessage());
         }
     }
 
