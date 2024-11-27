@@ -1,0 +1,1012 @@
+# When we move to a db which will definitely return some predefined values for books,
+# users, loans etc., I'll specify these values. For now, enjoy examples given here
+openapi: 3.0.1
+info:
+  title: Library
+  description: Library API Server
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: Books
+    description: Info on all of books in the library and management operations
+  - name: Users
+    description: User registration, login and info
+  - name: Reservations
+    description: Book reservations
+  - name: Loans
+    description: Book loans
+  - name: Librarian notes
+    description: Notes made by librarians on readers
+paths:
+  /books:
+    get:
+      tags:
+        - Books
+      summary: 'Get info about all of the books in the library'
+      operationId: getAllBooks
+      responses:
+        200:
+          description: 'Returned books'
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookDTO'
+        404:
+          description: 'No books found'
+    post:
+      tags:
+        - Books
+      summary: 'Add a new book'
+      operationId: addBook
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookDTO'
+            examples:
+              Successful (if no book with this code exists):
+                value:
+                  id: 0
+                  title: 'Book Title'
+                  author: 'John Doe'
+                  code: 'ISBN 978-3-16-148410-0'
+                  genre: 'Fantasy'
+                  available: 'true'
+                  loanPeriod: '30'
+                  nextReturnDate: '2024-11-10'
+                  notificationMessage: 'Message'
+              Blank props:
+                value:
+                  id: 0
+                  title: ''
+                  author: ''
+                  code: ''
+                  genre: ''
+                  available: 'true'
+                  loanPeriod: '30'
+                  nextReturnDate: '2024-11-10'
+                  notificationMessage: 'Message'
+        required: true
+      responses:
+        201:
+          description: 'Book successfully added'
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: 'Book added successfully'
+        400:
+          description: 'Failed to add book'
+          content:
+            'application/json':
+              schema:
+                type: string
+              examples:
+                Other mistakes, like duplicate code:
+                  value: 'Failed to add book'
+                Blank fields:
+                  value: "Error: Title, author, code, and genre must not be empty"
+  /books/{id}:
+    get:
+      tags:
+        - Books
+      operationId: getBook
+      summary: 'Get book by its id'
+      parameters:
+        - name: id
+          description: 'id of the book'
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: 'Successfully got the book'
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/BookDTO'
+        404:
+          description: 'Book not found'
+    put:
+      tags:
+        - Books
+      operationId: updateBook
+      summary: 'Update book info'
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          description: 'id of the book to be updated'
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookDTO'
+        required: true
+      responses:
+        200:
+          description: 'Book updated successfully'
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: 'Book updated successfully'
+        404:
+          description: 'Book with this id not found'
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: 'Failed to update book'
+    delete:
+      tags:
+        - Books
+      operationId: deleteBook
+      summary: 'Delete a book'
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          description: 'id of the book to be deleted'
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Book deleted successfully
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: 'Book deleted successfully'
+        404:
+          description: 'Book with this id not found'
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: 'Book not found'
+  /books/search:
+    get:
+      tags:
+        - Books
+      operationId: searchBooks
+      summary: 'Find books by criteria'
+      parameters:
+        - name: title
+          description: Book's title
+          example: Title
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: author
+          description: Book's author
+          example: Jane Doe
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: genre
+          description: Book's genre
+          in: query
+          required: false
+          example: Fantasy
+          schema:
+            type: string
+      responses:
+        200:
+          description: Found one or more books matching criteria
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookDTO'
+        404:
+          description: No books matching criteria found
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookDTO'
+                example: []
+  /users/register/reader:
+    post:
+      tags:
+        - Users
+      summary: Register a new reader
+      operationId: registerReader
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReaderRegisterDTO'
+            examples:
+              An OK reader:
+                value:
+                  phone: '+380671488228'
+                  firstName: Vasyl
+                  lastName: Pupkin
+                  email: vasyl.pupkin@example.com
+                  age: 18
+                  password: bobaffef
+              Invalid email:
+                value:
+                  phone: '+380671488228'
+                  firstName: Vasyl
+                  lastName: Pupkin
+                  email: vasyl.pupkin
+                  age: 18
+                  password: bobaffef
+              Invalid phone:
+                value:
+                  phone: this is not a phone!
+                  firstName: Vasyl
+                  lastName: Pupkin
+                  email: vasyl.pupkin
+                  age: 18
+                  password: bobaffef
+        required: true
+      responses:
+        200:
+          description: Reader registered successfully
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  jwt:
+                    type: string
+        400:
+          description: Email already exists
+          content:
+            'application/json':
+              schema:
+                type: string
+              examples:
+                EmailDuplicate:
+                  value: 'Error: Email already exists'
+                PhoneInvalid:
+                  value: "Phone number must be valid and contain 10 to 15 digits, optionally starting with '+'"
+                BlankFirstName:
+                  value: Firstname must not be blank
+                BlankLastName:
+                  value: Lastname must not be blank
+                BlankPassword:
+                  value: Password must not be blank
+  /users/register/librarian:
+    post:
+      tags:
+        - Users
+      summary: Register a new librarian
+      operationId: registerLibrarian
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LibrarianRegisterDTO'
+            examples:
+              An OK librarian:
+                value:
+                  firstName: Vasyl
+                  lastName: Pupkin
+                  email: vasyl.pupkin@ukr.net
+              Invalid email:
+                value:
+                  firstName: Vasyl
+                  lastName: Pupkin
+                  email: vasyl.pupkin@ukr.net
+        required: true
+      responses:
+        200:
+          description: Librarian registered successfully
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  email:
+                    type: string
+                    example: lovemrsnorris@hogwarts.com
+                  password:
+                    type: string
+                    example: grg3443f
+        400:
+          description: Email already exists
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: 'Error: Email already exists'
+  /users/login:
+    post:
+      tags:
+        - Users
+      summary: Login into an existing account
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginDTO'
+        required: true
+      responses:
+        200:
+          description: Successfully logged in
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  jwt:
+                    type: string
+        404:
+          description: No user with submitted email
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: Email not found
+        400:
+          description: Wrong password, expired or blocked
+          content:
+            'application/json':
+              schema:
+                type: string
+              examples:
+                WrongPWD:
+                  value: "Wrong password"
+                ExpiredOrBlocked:
+                  value: User is blocked or expired
+  /users/{userId}:
+    get:
+      tags:
+        - Users
+      summary: Get user with given id info
+      operationId: getUserById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          description: User's id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Found info on user
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/UserDTO"
+        404:
+          description: User not found
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: "Error: User not found"
+  /users/reader/{cardNumber}:
+    get:
+      tags:
+        - Users
+      operationId: getReaderByCardNumber
+      summary: Get info on reader with given card number
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cardNumber
+          in: path
+          required: true
+          schema:
+            type: string
+            example: 43231343
+      responses:
+        200:
+          description: Found info on reader
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/UserDTO"
+        404:
+          description: Reader with card number not found
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: "Error: Reader with card number not found"
+  /users/block/{readerId}:
+      get:
+        tags:
+          - Users
+        summary: Block reader with id
+        operationId: blockReader
+        security:
+          - bearerAuth: []
+        parameters:
+          - name: readerId
+            in: path
+            required: true
+            schema:
+              type: integer
+              format: int64
+        responses:
+          200:
+            description: Reader has been blocked
+            content:
+              'application/json':
+                schema:
+                  type: string
+                  example: Reader has been blocked.
+          400:
+            description: User is not a reader
+            content:
+              application/json:
+                schema:
+                  type: string
+                  example: "Error: User is not a reader"
+          404:
+            description: Reader not found
+            content:
+              'application/json':
+                schema:
+                  type: string
+                  example: "Error: Reader not found"
+  /reservations/reserve:
+    post:
+      tags:
+        - Reservations
+      operationId: reserveBook
+      security:
+        - bearerAuth: []
+      summary: Reserve a book
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationDTO'
+        required: true
+      responses:
+        200:
+          description: Book reserved successfully
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: "Book reserved successfully!"
+        404:
+          description: User or book not found
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: "Invalid user or book is not available"
+  /reservations/user/{userId}:
+    get:
+      tags:
+        - Reservations
+      operationId: getReservationsForUser
+      summary: Get all reservations made by reader with given id
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Found one or more reservations by user
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReservationDTO'
+        404:
+          description: User or his reservations not found
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReservationDTO'
+                example: [ ]
+  /reservations/expired:
+    get:
+      tags:
+        - Reservations
+      operationId: getExpiredReservations
+      summary: Get all expired reservations
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Found one or more expired reservations
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReservationDTO'
+        404:
+          description: No expired reservations exist
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: No expired reservations found
+  /reservations/cancel/{reservationId}:
+    delete:
+      tags:
+        - Reservations
+      operationId: cancelReservation
+      summary: Cancel reservation by id
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: reservationId
+          description: Id of the reservation
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Reservation canceled successfully
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: Reservation canceled successfully!
+        404:
+          description: No reservation found
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: No reservation found
+  /loans/return/{loanId}:
+    post:
+      tags:
+        - Loans
+      operationId: returnBook
+      summary: Return the loaned book
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: loanId
+          description: Loan id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Book returned successfully
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: Book returned successfully!
+        404:
+          description: Loan not found
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: Loan not found.
+  /loans/issue:
+    post:
+      tags:
+        - Loans
+      operationId: issueLoan
+      summary: Issue a new loan
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanDTO'
+        required: true
+      responses:
+        200:
+          description: Loan issued successfully
+          content:
+            '*/*':
+              schema:
+                type: string
+                example: Book issued successfully!
+        400:
+          description: Book is unavailable
+          content:
+            '*/*':
+              schema:
+                type: string
+                example: Book is unavailable
+        404:
+          description: Book or user not found
+          content:
+            'application/json':
+              schema:
+                type: string
+              examples:
+                User not found:
+                  value: User not found
+                Book not found:
+                  value: Book not found
+  /loans/{loanId}/status:
+    patch:
+      tags:
+        - Loans
+      operationId: updateLoanStatus
+      summary: Updates loan status
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: loanId
+          description: Id of loan to be updated
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: status
+          description: New status
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Loan status updated successfully
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: Loan status updated successfully
+        400:
+          description: Status invalid
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: "Invalid status: invalidstatusname"
+        404:
+          description: Loan not found
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: Loan not found
+  /loans/user/{userId}:
+    get:
+      tags:
+        - Loans
+      operationId: getLoansForUser
+      summary: Get loans for user with given id
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: userId
+          description: Id of the user
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Found one or more loans for user
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LoanDTO"
+        404:
+          description: No loans for user found
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: No loans found for this user
+  /loans/overdue:
+    get:
+      tags:
+        - Loans
+      operationId: getOverdueLoans
+      summary: Get overdue loans
+      security:
+        - bearerAuth: [ ]
+      responses:
+        200:
+          description: Found one or more overdue loans
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LoanDTO"
+        404:
+          description: No overdue loans found. Yay!
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: No overdue loans found
+  /librarian-notes/add:
+    post:
+      tags:
+        - Librarian notes
+      operationId: addNoteToUser
+      summary: Add a note for user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          description: Id of the user
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+              example: Sample note
+        required: true
+      responses:
+        200:
+          description: Note added successfully
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: Note added successfully
+        404:
+          description: No user found
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: No user found
+  /librarian-notes/user/{userId}:
+    get:
+      tags:
+        - Librarian notes
+      operationId: getNotesForUser
+      summary: Get notes on user
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: userId
+          in: path
+          description: Id of the user
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Found one or more notes on user
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LibrarianNoteDTO'
+        404:
+          description: User or note on him not found
+          content:
+            'application/json':
+              schema:
+                type: string
+              examples:
+                User not found:
+                  value: User not found
+                Notes not found:
+                  value: Notes on this user not found
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    BookDTO:
+      required:
+        - author
+        - code
+        - genre
+        - title
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+          example: 'Book Title'
+        author:
+          type: string
+          example: 'John Doe'
+        code:
+          type: string
+          example: 'ISBN 978-3-16-148410-0'
+        genre:
+          type: string
+          example: 'Fantasy'
+        available:
+          type: boolean
+          example: 'true'
+        loanPeriod:
+          type: integer
+          example: '30'
+          format: int32
+        nextReturnDate:
+          type: string
+          format: date
+        notificationMessage:
+          type: string
+          example: 'Message'
+    ReaderRegisterDTO:
+      type: object
+      properties:
+        phone:
+          type: string
+          example: '+380671488228'
+        firstName:
+          type: string
+          example: Vasyl
+        lastName:
+          type: string
+          example: Pupkin
+        email:
+          type: string
+          example: vasyl.pupkin@example.com
+        age:
+          type: integer
+          example: 18
+          format: int32
+        password:
+          type: string
+          example: AStrongPassword
+    LibrarianRegisterDTO:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: Argus
+        lastName:
+          type: string
+          example: Filch
+        email:
+          type: string
+          example: lovemrsnorris@hogwarts.com
+    UserLoginDTO:
+      type: object
+      properties:
+        email:
+          type: string
+          example: vasyl.pupkin@example.com
+        password:
+          type: string
+          example: AStrongPassword
+    ReservationDTO:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        bookId:
+          type: integer
+          format: int64
+        reservationDate:
+          type: string
+          format: date
+        reservationExpiryDate:
+          type: string
+          format: date
+    LoanDTO:
+      required:
+        - loanDate
+        - returnDueDate
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        bookId:
+          type: integer
+          format: int64
+        loanDate:
+          type: string
+          format: date
+        returnDueDate:
+          type: string
+          format: date
+        status:
+          pattern: issued|returned|overdue
+          type: string
+          example: issued
+    LibrarianNoteDTO:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+          example: 5
+        note:
+          type: string
+          example: "Sample note"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-11-27"
+    UserDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+        firstName:
+          type: string
+          example: Vasyl
+        lastName:
+          type: string
+          example: Pupkin
+        email:
+          type: string
+          example: vasyl.pupkin@example.com
+        phone:
+          type: string
+          example: +380671488228
+        age:
+          type: integer
+          example: 18
+          format: int32
+        cardNumber:
+          type: string
+          example: 43792345
+        cardExpiryDate:
+          type: string
+          example: 2024-11-11
+        blocked:
+          type: boolean
+          example: false
+        roles:
+          type: string
+          example: READER
+#          type: array
+#          items: [
+#          properties:
+#
+#          ]
