@@ -167,7 +167,7 @@ paths:
             format: int64
       responses:
         200:
-          description: OK
+          description: Book deleted successfully
           content:
             'application/json':
               schema:
@@ -350,7 +350,7 @@ paths:
         required: true
       responses:
         200:
-          description: OK
+          description: Successfully logged in
           content:
             'application/json':
               schema:
@@ -394,7 +394,7 @@ paths:
             format: int64
       responses:
         200:
-          description: OK
+          description: Found info on user
           content:
             'application/json':
               schema:
@@ -423,7 +423,7 @@ paths:
             example: 43231343
       responses:
         200:
-          description: OK
+          description: Found info on reader
           content:
             'application/json':
               schema:
@@ -518,7 +518,7 @@ paths:
             format: int64
       responses:
         200:
-          description: OK
+          description: Found one or more reservations by user
           content:
             'application/json':
               schema:
