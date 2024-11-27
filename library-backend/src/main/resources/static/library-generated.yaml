@@ -388,6 +388,9 @@ paths:
       tags:
         - Reservations
       operationId: reserveBook
+      security:
+        - bearerAuth: []
+      summary: Reserve a book
       requestBody:
         content:
           application/json:
@@ -396,18 +399,29 @@ paths:
         required: true
       responses:
         200:
-          description: OK
+          description: Book reserved successfully
           content:
-            '*/*':
+            'application/json':
               schema:
                 type: string
-  /loans/return/{loanId}:
-    post:
+                example: "Book reserved successfully!"
+        404:
+          description: User or book not found
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: "Invalid user or book is not available"
+  /reservations/user/{userId}:
+    get:
       tags:
-        - Loans
-      operationId: returnBook
+        - Reservations
+      operationId: getReservationsForUser
+      summary: Get all reservations made by reader with given id
+      security:
+        - bearerAuth: []
       parameters:
-        - name: loanId
+        - name: userId
           in: path
           required: true
           schema:
@@ -417,14 +431,110 @@ paths:
         200:
           description: OK
           content:
-            '*/*':
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReservationDTO'
+        404:
+          description: User or his reservations not found
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReservationDTO'
+                example: [ ]
+  /reservations/expired:
+    get:
+      tags:
+        - Reservations
+      operationId: getExpiredReservations
+      summary: Get all expired reservations
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Found one or more expired reservations
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReservationDTO'
+        404:
+          description: No expired reservations exist
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReservationDTO'
+                example: []
+  /reservations/cancel/{reservationId}:
+    delete:
+      tags:
+        - Reservations
+      operationId: cancelReservation
+      summary: Cancel reservation by id
+      parameters:
+        - name: reservationId
+          description: Id of the reservation
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Reservation canceled successfully
+          content:
+            'application/json':
               schema:
                 type: string
+                example: Reservation canceled successfully!
+        404:
+          description: No reservation found
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: No reservation found
+  /loans/return/{loanId}:
+    post:
+      tags:
+        - Loans
+      operationId: returnBook
+      summary: Return the loaned book
+      parameters:
+        - name: loanId
+          description: Loan id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Book returned successfully
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: Book returned successfully!
+        404:
+          description: Loan not found
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: Loan not found.
   /loans/issue:
     post:
       tags:
         - Loans
       operationId: issueLoan
+      summary: Issue a new loan
       requestBody:
         content:
           application/json:
@@ -433,11 +543,124 @@ paths:
         required: true
       responses:
         200:
-          description: OK
+          description: Loan issued successfully
           content:
             '*/*':
               schema:
                 type: string
+                example: Book issued successfully!
+        400:
+          description: Book is unavailable
+          content:
+            '*/*':
+              schema:
+                type: string
+                example: Book is unavailable
+        404:
+          description: Book or user not found
+          content:
+            'application/json':
+              schema:
+                type: string
+              examples:
+                User not found:
+                  value: User not found
+                Book not found:
+                  value: Book not found
+  /loans/{loanId}/status:
+    patch:
+      tags:
+        - Loans
+      operationId: updateLoanStatus
+      summary: Updates loan status
+      parameters:
+        - name: loanId
+          description: Id of loan to be updated
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: status
+          description: New status
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Loan status updated successfully
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: Loan status updated successfully
+        400:
+          description: Status invalid
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: "Invalid status: invalidstatusname"
+        404:
+          description: Loan not found
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: Loan not found
+  /loans/user/{userId}:
+    get:
+      tags:
+        - Loans
+      operationId: getLoansForUser
+      summary: Get loans for user with given id
+      parameters:
+        - name: userId
+          description: Id of the user
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Found one or more loans for user
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LoanDTO"
+        404:
+          description: No loans for user found
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: No loans found for this user
+  /loans/overdue:
+    get:
+      tags:
+        - Loans
+      operationId: getOverdueLoans
+      summary: Get overdue loans
+      responses:
+        200:
+          description: Found one or more overdue loans
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LoanDTO"
+        404:
+          description: No overdue loans found. Yay!
+          content:
+            'application/json':
+              schema:
+                type: string
+                example: No overdue loans found
   /librarian-notes/add:
     post:
       tags:
@@ -463,97 +686,6 @@ paths:
             '*/*':
               schema:
                 type: string
-  /loans/{loanId}/status:
-    patch:
-      tags:
-        - Loans
-      operationId: updateLoanStatus
-      parameters:
-        - name: loanId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: status
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: string
-
-  /reservations/user/{userId}:
-    get:
-      tags:
-        - Reservations
-      operationId: getReservationsForUser
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        200:
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ReservationDTO'
-  /reservations/expired:
-    get:
-      tags:
-        - Reservations
-      operationId: getExpiredReservations
-      responses:
-        200:
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ReservationDTO'
-  /loans/user/{userId}:
-    get:
-      tags:
-        - Loans
-      operationId: getLoansForUser
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        200:
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: object
-  /loans/overdue:
-    get:
-      tags:
-        - Loans
-      operationId: getOverdueLoans
-      responses:
-        200:
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: object
   /librarian-notes/user/{userId}:
     get:
       tags:
@@ -575,25 +707,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/LibrarianNoteDTO'
-  /reservations/cancel/{reservationId}:
-    delete:
-      tags:
-        - Reservations
-      operationId: cancelReservation
-      parameters:
-        - name: reservationId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        200:
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: string
 components:
   securitySchemes:
     bearerAuth:
@@ -720,6 +833,7 @@ components:
         status:
           pattern: issued|returned|overdue
           type: string
+          example: issued
     LibrarianNoteDTO:
       type: object
       properties:
